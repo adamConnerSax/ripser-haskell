@@ -14,6 +14,8 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.IO                  as T
 import qualified Vector.Storable               as VS
+import qualified Data.ByteString.Lazy.Char8    as LBC
+import           Control.Concurrent.STM (atomically)
 
 data Input = LowerDistance LA.MatrixDouble | PointCloud (LA.Matrix Double) | Sparse [(Int, Int, Double)]
 type Dimension = Int -- specify max dimension for computed persistent homology
@@ -36,13 +38,22 @@ callRipser pathM dimM threshM ratioM input =
       optFromMaybe optS vM = maybe "" (\v -> optS <> (T.pack $ show v)) vM
       dimOpt = optFromMaybe "--dim=" dimM
       threshOpt = optFromMaybe "--thresh" threshM
-      ratioOpt = 
-  undefined
+      ratioOpt = optFromMaybe "--ratio" ratioM
+      inputOpt = "--format=" <> case Input of
+                                  LowerDIstance _ -> "lower-distance"
+                                  PointCloud _ -> "point-cloud"
+                                  Sparse _ -> "sparse"
+      opts = fmap T.unpack [dimOpt, threshOpt, ratioOpt, inputOpt]
+      ripserProc = SP.proc ripserPath opts
+  in SP.withProcessWait_ ripserProc $ \p -> do
+    T.hPutStr (SP.getStdin p) $ encodeInput
+    S.hClose (SP.getStdin p)
+    SP.atomically (SP.getStdout p) >>= parseOutput 
 
 encodeInput :: Input -> TL.Text
 encodeInput = undefined
 
-parseOutput :: TL.Text -> Either T.Text [PersistenceInterval]
+parseOutput :: LBC.ByteString -> Either T.Text [PersistenceInterval]
 parseOutput = undefined
 
 distanceMatrix
