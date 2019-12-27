@@ -1,8 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Numeric.Ripser
   ()
 where
 
-import qualified System.Process                as SP
+import qualified System.Process.Typed          as SP
+import qualified System.IO                     as S
+import qualified Control.Exception             as X
 import qualified Numeric.LinearAlgebra         as LA
 import qualified Control.Foldl                 as FL
 import qualified Data.Interval                 as I
@@ -21,8 +24,6 @@ type Distance a = (a -> a -> Double) -- should be >= 0 for all a
 
 data PersistenceInterval = PersistenceInterval { dim :: Int, interval :: I.Interval Double }
 
-
-
 callRipser
   :: Maybe FilePath
   -> Maybe Dimenion
@@ -30,7 +31,13 @@ callRipser
   -> Maybe Ratio
   -> Input
   -> IO [PersistenceInterval]
-callRipser pathM dimM threshM ratioM input = undefined
+callRipser pathM dimM threshM ratioM input =
+  let ripserPath = maybe "ripser" pathM
+      optFromMaybe optS vM = maybe "" (\v -> optS <> (T.pack $ show v)) vM
+      dimOpt = optFromMaybe "--dim=" dimM
+      threshOpt = optFromMaybe "--thresh" threshM
+      ratioOpt = 
+  undefined
 
 encodeInput :: Input -> TL.Text
 encodeInput = undefined
