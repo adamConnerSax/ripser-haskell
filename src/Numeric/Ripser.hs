@@ -78,27 +78,22 @@ callRipser pathM dimM threshM ratioM input = do
   putStrLn $ "Encoded input: " ++ T.unpack encodedText
   let encodedBS = TL.encodeUtf8 $ TL.fromStrict $ encodeInput input
       ripserProc =
-        SP.setStdin SP.createPipe --(SP.byteStringInput encodedBS)
-          $ SP.setStdout SP.byteStringOutput
-          $ SP.proc ripserPath [] --opts
-  SP.withProcessWait_ ripserProc $ \p -> do
-    BL.hPutStr (SP.getStdin p) encodedBS
-    S.hClose (SP.getStdin p)
-    unparsed <- atomically (SP.getStdout p)
-    putStr $ "UnParsed output:\n" ++ show unparsed
-    case parseOutput unparsed of
-      Left parseErr ->
-        X.throwIO $ S.userError "parse failure on output of ripser."
-      Right x -> return x
+        SP.setStdin (SP.byteStringInput encodedBS) $ SP.proc ripserPath [] --opts
+  (unparsed, error) <- SP.readProcess_ ripserProc
+  putStr $ "UnParsed output:\n" ++ show unparsed
+  case parseOutput unparsed of
+    Left parseErr ->
+      X.throwIO $ S.userError "parse failure on output of ripser."
+    Right x -> return x
 
 encodeInput :: Input -> T.Text
 encodeInput (LowerDistance mLD) =
   let (rows, cols) = LA.size mLD
-  in  T.intercalate " " $ fmap (T.pack . show) $ do
+      nums         = T.intercalate "," $ fmap (T.pack . show) $ do
         c <- [0 .. (cols - 1)]
         r <- [(c + 1) .. (rows - 1)]
         return $ mLD `LA.atIndex` (r, c)
-
+  in  nums
 encodeInput (PointCloud mPC) =
   let rowToCSV = T.intercalate "," . fmap (T.pack . show) . VS.toList
   in  T.intercalate "\n" $ fmap rowToCSV $ LA.toRows mPC
