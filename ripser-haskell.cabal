@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ae32b650d1922eca84cf052467ab752928606610cd0c1a7a3f024839a9a11735
+-- hash: c00bb9564dd187aa7628f3ff69265427d28ea153dc067d4da88d825298061e8f
 
 name:           ripser-haskell
 version:        0.1.0.0
@@ -35,11 +35,13 @@ library
       src
   ghc-options: -O -Wall
   build-depends:
-      base >=4.7 && <5
+      Persistence >=2.0.1 && <3
+    , base >=4.7 && <5
     , bytestring >=0.10.8 && <0.11
     , data-interval >=1.0.0 && <2.1
     , foldl >=1.4.0 && <=1.5
     , hmatrix >=0.19.0 && <0.21
+    , megaparsec >=7.0 && <9
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3
     , typed-process >=0.2.5 && <0.3
@@ -55,11 +57,13 @@ test-suite ripser-test
       test
   ghc-options: -O -Wall
   build-depends:
-      base >=4.7 && <5
+      Persistence >=2.0.1 && <3
+    , base >=4.7 && <5
     , bytestring >=0.10.8 && <0.11
     , data-interval >=1.0.0 && <2.1
     , foldl >=1.4.0 && <=1.5
     , hmatrix >=0.19.0 && <0.21
+    , megaparsec >=7.0 && <9
     , ripser-haskell
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3

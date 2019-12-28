@@ -14,17 +14,21 @@ import qualified Data.List                     as L
 import           Data.Maybe                     ( fromMaybe
                                                 , maybe
                                                 )
+import           Data.Void                      ( Void )
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Encoding       as TL
 import qualified Data.Text.IO                  as T
 import qualified Data.Vector.Storable          as VS
-import qualified Data.ByteString.Lazy.         as BL
+import qualified Data.ByteString.Lazy          as BL
 import           Control.Concurrent.STM         ( atomically )
 
-import qualified  Text.MegaParsec as P
-import qualified Text.MegaParsec.Byte as P
-import qualified Text.MegaParsec.Byte.Lexer as PL
+import qualified Text.Megaparsec               as P
+import qualified Text.Megaparsec.Byte          as P
+import qualified Text.Megaparsec.Byte.Lexer    as PL
+
+import qualified Persistence.Filtration        as PH
+import qualified Control.Applicative           as A
 
 data Input = LowerDistance (LA.Matrix Double) | PointCloud (LA.Matrix Double) | Sparse [(Int, Int, Double)]
 type Dimension = Int -- specify max dimension for computed persistent homology
@@ -33,7 +37,7 @@ type Ratio = Double -- only report persistence pairs with death/birth > Ratio
 
 type Distance a = (a -> a -> Double) -- should be >= 0 for all a
 
-data PersistenceInterval = PersistenceInterval { dim :: Int, interval :: I.Interval Double }
+data PersistenceInterval = PersistenceInterval { dim :: Int, interval :: PH.BarCode Double }
 
 callRipser
   :: Maybe FilePath
@@ -83,28 +87,54 @@ encodeInput (Sparse lSP) = T.intercalate "\n" $ fmap
   )
   lSP
 
-type Parser a = Parsec Void BL.ByteString
+type Parser a = P.Parsec Void BL.ByteString
 
 parseOutput :: BL.ByteString -> Either T.Text [PersistenceInterval]
-parseOutput ro = either (T.pack . p.errorBundlePretty) id $ P.runParser p "ripser-output" ro where
-  let ignoreLineStarting :: BL.ByteString -> Parser ()
-      ignoreLineStarting starts = do
-        P.void $ P.string starts        
-        _ <- P.manyTill PL.charLiteral eol
-      parseDimLine :: Parser Int
-      parseDimLine = do
-        P.void $ P.string "persistence intervals in dim "
-        P.lexeme PL.decimal
-      parseInterval :: Parser PersistenceInterval
-      parseInterval = do
+parseOutput ro = either (T.pack . P.errorBundlePretty) id
+  $ P.runParser p "ripser-output" ro
+ where
+  ignoreLine :: Parser ()
+  ignoreLine = P.manyTill (P.takeWhileP Nothing (const True)) eol >> return ()
+  trimLeading :: Parser ()
+  trimLeading = PL.space P.space1 A.empty A.empty -- spaces
+  parseDimLine :: Parser Int
+  parseDimLine = do
+    void $ P.string "persistence intervals in dim "
+    PL.lexeme PL.decimal
+    trimLeading
+    void $ P.string ":"
+    eol
+  parseBarCode :: Parser (PH.BarCode Double)
+  parseBarCode = do
+    void $ P.string "["
+    birth <- PL.signed (return ()) PL.float
+    trimLeading
+    void $ P.string "["
+    trimLeading
+    death <- PL.signed (return ()) PL.float
+    trimLeading
+    void $ P.string ")"
+    return $ (birth, PH.Finite death)
+  parseBarCodes :: Parser [PH.BarCode]
+  parseBarCodes = A.some parseOne
+   where
+    parseOne = do
+      trimLeading
+      bc <- parseBarCode
+      P.eol
+      return bc
+  parseDim :: [PersistenceInterval]
+  parseDim = do
+    d        <- parseDimLine
+    barCodes <- parseBarCodes
+    return $ fmap (PersistenceInterval d) barCodes
   p :: Parser [PersistenceInterval]
   p = do
-    ignoreLineStarting ""
-    ignoreLineStarting ""
-    parseDimLine
-    
-    
-    
+    dim <- P.manyTill ignoreLine (P.lookAhead parseDimLine)
+    concat <$> A.some parseDim
+
+
+
 
 distanceMatrix
   :: Foldable f
