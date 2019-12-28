@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c00bb9564dd187aa7628f3ff69265427d28ea153dc067d4da88d825298061e8f
+-- hash: 7fb4364a20d04a3ff3a74d6899607a258d0732dd87ee0269f9f66dac763a39aa
 
 name:           ripser-haskell
 version:        0.1.0.0
@@ -36,12 +36,14 @@ library
   ghc-options: -O -Wall
   build-depends:
       Persistence >=2.0.1 && <3
+    , arithmoi >=0.9.0 && <0.11
     , base >=4.7 && <5
     , bytestring >=0.10.8 && <0.11
     , data-interval >=1.0.0 && <2.1
     , foldl >=1.4.0 && <=1.5
     , hmatrix >=0.19.0 && <0.21
     , megaparsec >=7.0 && <9
+    , scientific >=0.3.6 && <0.4
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3
     , typed-process >=0.2.5 && <0.3
@@ -50,7 +52,7 @@ library
 
 test-suite ripser-test
   type: exitcode-stdio-1.0
-  main-is: Ripser-test.hs
+  main-is: ripserTest.hs
   other-modules:
       Paths_ripser_haskell
   hs-source-dirs:
@@ -58,6 +60,7 @@ test-suite ripser-test
   ghc-options: -O -Wall
   build-depends:
       Persistence >=2.0.1 && <3
+    , arithmoi >=0.9.0 && <0.11
     , base >=4.7 && <5
     , bytestring >=0.10.8 && <0.11
     , data-interval >=1.0.0 && <2.1
@@ -65,6 +68,7 @@ test-suite ripser-test
     , hmatrix >=0.19.0 && <0.21
     , megaparsec >=7.0 && <9
     , ripser-haskell
+    , scientific >=0.3.6 && <0.4
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3
     , typed-process >=0.2.5 && <0.3
