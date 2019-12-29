@@ -10,7 +10,7 @@ import qualified System.IO                     as S
 main :: IO ()
 main = do
   S.hSetBuffering S.stdout S.NoBuffering
-  let pathToRipser   = "ripser/ripser"
+  let pathToRipser   = "ripser/ripser-debug"
       pathToExamples = "ripser/examples/"
   random16LD <-
     R.lowerDistanceMatrixFromFile

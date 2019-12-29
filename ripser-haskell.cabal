@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ff1cabce0e280c7fec23ff437e00f56bc18c1b61fe5b660712ca756626e6db71
+-- hash: 10686bc85225d8e530ba245a904800bd826123afada275acc38e5e72de9abab5
 
 name:           ripser-haskell
 version:        0.1.0.0
@@ -47,6 +47,7 @@ library
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3
     , typed-process >=0.2.5 && <0.3
+    , unliftio >=0.2.10 && <0.3
     , vector >=0.11.0.0 && <0.13
   default-language: Haskell2010
 
@@ -72,5 +73,6 @@ test-suite ripser-test
     , stm >=2.4.5 && <2.5.1
     , text >=1.2.2 && <1.3
     , typed-process >=0.2.5 && <0.3
+    , unliftio >=0.2.10 && <0.3
     , vector >=0.11.0.0 && <0.13
   default-language: Haskell2010

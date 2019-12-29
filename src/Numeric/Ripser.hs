@@ -14,6 +14,7 @@ module Numeric.Ripser
 where
 
 import qualified System.Process.Typed          as SP
+import qualified UnliftIO.Temporary            as U
 import qualified System.IO                     as S
 import qualified System.IO.Error               as S
 import qualified Control.Exception             as X
@@ -65,31 +66,42 @@ callRipser
 callRipser pathM dimM threshM ratioM input = do
   let ripserPath = fromMaybe "ripser" pathM
       optFromMaybe optS vM = maybe "" (\v -> optS <> (T.pack $ show v)) vM
-      dimOpt    = optFromMaybe "--dim=" dimM
-      threshOpt = optFromMaybe "--thresh" threshM
-      ratioOpt  = optFromMaybe "--ratio" ratioM
-      inputOpt  = "--format=" <> case input of
+      dimOpt    = optFromMaybe "--dim " dimM
+      threshOpt = optFromMaybe "--threshold " threshM
+      ratioOpt  = optFromMaybe "--ratio " ratioM
+      inputOpt  = "--format " <> case input of
         LowerDistance _ -> "lower-distance"
         PointCloud    _ -> "point-cloud"
         Sparse        _ -> "sparse"
-      opts = fmap T.unpack [dimOpt, threshOpt, ratioOpt, inputOpt]
+      opts = [dimOpt, threshOpt, ratioOpt, inputOpt]
+      cmd  = ripserPath ++ " " ++ T.unpack (T.intercalate " " opts)
   putStrLn $ "input: " ++ show input
   let encodedText = encodeInput input
   putStrLn $ "Encoded input: " ++ T.unpack encodedText
   let encodedBS = TL.encodeUtf8 $ TL.fromStrict $ encodeInput input
-      ripserProc =
-        SP.setStdin (SP.byteStringInput encodedBS) $ SP.proc ripserPath [] --opts
-  (unparsed, error) <- SP.readProcess_ ripserProc
+  unparsed <- U.withSystemTempFile "ripserIn" $ \fpIn hIn -> do
+    U.withSystemTempFile "ripserOut" $ \fpOut hOut -> do
+      BL.hPutStr hIn encodedBS
+      S.hClose hIn
+      S.withBinaryFile fpIn S.ReadMode $ \h' -> do
+        let ripserProc =
+              SP.setStdin (SP.useHandleClose h')
+                $ SP.setStdout (SP.useHandleClose hOut)
+                $ SP.shell cmd --(ripserPath <> " --format lower-distance")
+        SP.runProcess_ ripserProc
+        BL.readFile fpOut
   putStr $ "UnParsed output:\n" ++ show unparsed
-  case parseOutput unparsed of
-    Left parseErr ->
-      X.throwIO $ S.userError "parse failure on output of ripser."
-    Right x -> return x
+  return []
+{-      case parseOutput unparsed of
+        Left parseErr ->
+          X.throwIO $ S.userError "parse failure on output of ripser."
+        Right x -> return x
+-}
 
 encodeInput :: Input -> T.Text
 encodeInput (LowerDistance mLD) =
   let (rows, cols) = LA.size mLD
-      nums         = T.intercalate "," $ fmap (T.pack . show) $ do
+      nums         = T.intercalate " " $ fmap (T.pack . show) $ do
         c <- [0 .. (cols - 1)]
         r <- [(c + 1) .. (rows - 1)]
         return $ mLD `LA.atIndex` (r, c)
