@@ -24,6 +24,7 @@ import qualified Data.Interval                 as I
 import qualified Data.List                     as L
 import           Data.Maybe                     ( fromMaybe
                                                 , maybe
+                                                , catMaybes
                                                 )
 import           Data.Void                      ( Void )
 import qualified Data.Scientific               as Sci
@@ -195,7 +196,6 @@ numbers = fmap (fmap Sci.toRealFloat) $ (trimLeading <|> void P.eol) >> A.many
 lowerDistanceMatrixFromFile :: FilePath -> IO Input
 lowerDistanceMatrixFromFile fp = do
   asBS <- BL.readFile fp
---  putStrLn $ show asBS
   nums <- case P.runParser numbers fp asBS of
     Left errB -> X.throwIO $ S.userError
       (  "parse failure on lower distance matrix file: "
@@ -216,7 +216,7 @@ lowerDistanceMatrixFromFile fp = do
       mLD = LA.assoc (nCols, nCols) 0 $ zip indices nums
   return $ LowerDistance mLD
 
-
+-- untested!!
 distanceMatrix
   :: Foldable f
   => Distance a -- ^ distance function
@@ -232,13 +232,25 @@ distanceMatrix d items = LowerDistance (LA.fromColumns $ go itemsL)
   go []       = []
   go (x : xs) = oneRow (x : xs) : go xs
 
-
+-- untested !!
 sparseDistanceMatrix
   :: Foldable f
   => Distance a -- ^ distance function
   -> Double -- ^ threshold for removing from sparse representation
   -> f a -- ^ items
   -> Input
-sparseDistanceMatrix = undefined
+sparseDistanceMatrix d thresh items = Sparse (concat $ go itemsL)
+ where
+  itemsL = FL.fold FL.list items
+  n      = L.length items
+  oneItem r c x y =
+    let h = d x y in if h >= thresh then Just (r, c, h) else Nothing
+  oneRow [] = []
+  oneRow (x : xs) =
+    let c = n - 1 - L.length xs
+    in  catMaybes $ fmap (\(r, y) -> oneItem r c x y) $ zip [(c + 1) ..] xs
+  go []       = []
+  go (x : xs) = oneRow (x : xs) : go xs
+
 
 
