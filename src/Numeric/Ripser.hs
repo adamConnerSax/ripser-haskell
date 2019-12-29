@@ -75,9 +75,9 @@ callRipser pathM dimM threshM ratioM input = do
         Sparse        _ -> "sparse"
       opts = [dimOpt, threshOpt, ratioOpt, inputOpt]
       cmd  = ripserPath ++ " " ++ T.unpack (T.intercalate " " opts)
-  putStrLn $ "input: " ++ show input
+--  putStrLn $ "input: " ++ show input
   let encodedText = encodeInput input
-  putStrLn $ "Encoded input: " ++ T.unpack encodedText
+--  putStrLn $ "Encoded input: " ++ T.unpack encodedText
   let encodedBS = TL.encodeUtf8 $ TL.fromStrict $ encodeInput input
   unparsed <- U.withSystemTempFile "ripserIn" $ \fpIn hIn -> do
     U.withSystemTempFile "ripserOut" $ \fpOut hOut -> do
@@ -90,13 +90,16 @@ callRipser pathM dimM threshM ratioM input = do
                 $ SP.shell cmd --(ripserPath <> " --format lower-distance")
         SP.runProcess_ ripserProc
         BL.readFile fpOut
-  putStr $ "UnParsed output:\n" ++ show unparsed
-  return []
-{-      case parseOutput unparsed of
-        Left parseErr ->
-          X.throwIO $ S.userError "parse failure on output of ripser."
-        Right x -> return x
--}
+--  putStr $ "UnParsed output:\n" ++ show unparsed
+--  return []
+  case parseOutput unparsed of
+    Left parseErr ->
+      X.throwIO
+        $  S.userError
+        $  "parse failure on output of ripser: "
+        ++ (T.unpack parseErr)
+    Right x -> return x
+
 
 encodeInput :: Input -> T.Text
 encodeInput (LowerDistance mLD) =
@@ -128,12 +131,6 @@ lexeme = PL.lexeme space
 trimLeading :: Parser ()
 trimLeading = PL.space P.space1 A.empty A.empty -- spaces
 
-ignoreLine :: Parser ()
-ignoreLine = P.manyTill (P.takeWhileP Nothing (const True)) P.eol >> return ()
-
-ignoreLinesUntil :: Parser a -> Parser ()
-ignoreLinesUntil p = void $ P.manyTill ignoreLine (P.lookAhead p)
-
 parseOutput :: BL.ByteString -> Either T.Text [PersistenceInterval]
 parseOutput ro =
   either (Left . T.pack . P.errorBundlePretty) Right
@@ -148,12 +145,15 @@ parseOutput ro =
     return dim
   parseBarCode :: Parser (PH.BarCode Double)
   parseBarCode = do
+    let pNumber =
+          fmap Sci.toRealFloat $ lexeme $ PL.signed (return ()) PL.scientific
+        pExtended = (PH.Finite <$> pNumber) <|> (PH.Infinity <$ P.space1)
     void $ P.string "["
-    birth <- lexeme $ PL.signed (return ()) PL.float
+    birth <- pNumber
     void $ P.string ","
-    death <- lexeme $ PL.signed (return ()) PL.float
+    death <- pExtended
     void $ P.string ")"
-    return $ (birth, PH.Finite death)
+    return $ (birth, death)
   parseBarCodes :: Parser [PH.BarCode Double]
   parseBarCodes = A.some parseOne
    where
@@ -169,8 +169,11 @@ parseOutput ro =
     return $ fmap (PersistenceInterval d) barCodes
   p :: Parser [PersistenceInterval]
   p = do
-    ignoreLinesUntil parseDimLine
-    concat <$> A.some parseDim
+    dim0 <- P.skipManyTill
+      (P.takeP (Just "skipping chars en route to first dim line") 1)
+      parseDim --ignoreLinesUntil parseDimLine
+    otherDims <- concat <$> A.many parseDim
+    return $ dim0 ++ otherDims
 
 toWord8 :: Char -> Word8
 toWord8 = toEnum . fromEnum
@@ -203,7 +206,7 @@ lowerDistanceMatrixFromFile fp = do
   putStrLn $ "lowerDistanceMatrixFromFile: Loaded " ++ show n ++ " numbers"
   nCols <- case exactSquareRoot ((8 * n) + 1) of
     Nothing -> X.throwIO $ S.userError
-      ("Loaded " ++ show n ++ " bumbers from file but that is not triangular!")
+      ("Loaded " ++ show n ++ " numbers from file but that is not triangular!")
     Just r -> return $ ((r - 1) `div` 2) + 1 -- +1 here because we have only below diagonal
   putStrLn $ "lowerDistanceMatrixFromFile: LDM has " ++ show nCols ++ " columns"
   let indices = do

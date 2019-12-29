@@ -16,16 +16,23 @@ main = do
     R.lowerDistanceMatrixFromFile
     $  pathToExamples
     ++ "random16.lower_distance_matrix"
-  putStrLn $ "loaded input: \n" ++ show random16LD
-{-  sphere_3_192LD <-
+--  putStrLn $ "loaded input: \n" ++ show random16LD
+  random16Barcodes <- R.callRipser (Just pathToRipser)
+                                   Nothing
+                                   Nothing
+                                   Nothing
+                                   random16LD
+  putStrLn $ "Output:\n" ++ (L.intercalate "\n" $ fmap show random16Barcodes)
+  sphere_3_192LD <-
     R.lowerDistanceMatrixFromFile
     $  pathToExamples
     ++ "sphere_3_192.lower_distance_matrix"
-  putStrLn $ "loaded input: \n" ++ show sphere_3_192LD -}
-  ripserOutput <- R.callRipser (Just pathToRipser)
-                               Nothing
-                               Nothing
-                               Nothing
-                               random16LD
-  putStrLn $ "Output:\n" ++ (L.intercalate "\n" $ fmap show ripserOutput)
-
+--  putStrLn $ "loaded input: \n" ++ show sphere_3_192LD -}
+  sphere_3_192Barcodes <- R.callRipser (Just pathToRipser)
+                                       Nothing
+                                       Nothing
+                                       Nothing
+                                       sphere_3_192LD
+  putStrLn
+    $  "Output:\n"
+    ++ (L.intercalate "\n" $ fmap show sphere_3_192Barcodes)
