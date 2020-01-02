@@ -6,10 +6,13 @@ module Numeric.Ripser
   , Threshold
   , Ratio
   , Distance
-  , PersistenceInterval
+  , PersistenceInterval(..)
   , callRipser
   , lowerDistanceMatrixFromFile
   , distanceMatrix
+    -- * Re-exports
+  , BarCode(..)
+  , Extended(..)
   )
 where
 
@@ -42,6 +45,9 @@ import qualified Text.Megaparsec.Byte.Lexer    as PL
 import           Data.Word                      ( Word8 )
 
 import qualified Persistence.Filtration        as PH
+import           Persistence.Filtration         ( BarCode(..)
+                                                , Extended(..)
+                                                )
 import qualified Control.Applicative           as A
 import           Control.Applicative            ( (<|>) )
 
