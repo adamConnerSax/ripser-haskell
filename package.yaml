@@ -43,5 +43,10 @@ tests:
     source-dirs: test
     ghc-options: -O -Wall -threaded
     dependencies:
+      - containers
+      - hmatrix
+      - hvega
+      - knit-haskell
+      - random
       - ripser-haskell
 

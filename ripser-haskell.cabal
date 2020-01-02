@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 10686bc85225d8e530ba245a904800bd826123afada275acc38e5e72de9abab5
+-- hash: 27d58736fd1ecf2afe2cb020056541fc1bf79a62666c545ed686f8175ca9e7e3
 
 name:           ripser-haskell
 version:        0.1.0.0
@@ -64,10 +64,14 @@ test-suite ripser-test
     , arithmoi >=0.9.0 && <0.11
     , base >=4.7 && <5
     , bytestring >=0.10.8 && <0.11
+    , containers
     , data-interval >=1.0.0 && <2.1
     , foldl >=1.4.0 && <=1.5
-    , hmatrix >=0.19.0 && <0.21
+    , hmatrix
+    , hvega
+    , knit-haskell
     , megaparsec >=7.0 && <9
+    , random
     , ripser-haskell
     , scientific >=0.3.6 && <0.4
     , stm >=2.4.5 && <2.5.1

@@ -101,19 +101,17 @@ callRipser pathM dimM threshM ratioM input = do
         ++ (T.unpack parseErr)
     Right x -> return x
 
-
 encodeInput :: Input -> T.Text
 encodeInput (LowerDistance mLD) =
   let (rows, cols) = LA.size mLD
       nums         = T.intercalate " " $ fmap (T.pack . show) $ do
-        c <- [0 .. (cols - 1)]
-        r <- [(c + 1) .. (rows - 1)]
+        r <- [0 .. (rows - 1)]
+        c <- [0 .. (r - 1)]
         return $ mLD `LA.atIndex` (r, c)
   in  nums
 encodeInput (PointCloud mPC) =
   let rowToCSV = T.intercalate "," . fmap (T.pack . show) . VS.toList
   in  T.intercalate "\n" $ fmap rowToCSV $ LA.toRows mPC
-
 encodeInput (Sparse lSP) = T.intercalate "\n" $ fmap
   (\(i, j, d) ->
     (T.pack $ show i) <> " " <> (T.pack $ show j) <> " " <> (T.pack $ show d)
