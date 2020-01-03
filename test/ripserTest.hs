@@ -66,6 +66,7 @@ makeDoc pathToExamples pathToRipser = do
   K.logLE K.Info
     $  "Output:\n"
     <> (T.pack . L.intercalate "\n" $ fmap show random16Barcodes)
+{-    
   sphere_3_192LD <-
     K.liftKnit
     $  R.lowerDistanceMatrixFromFile
@@ -127,7 +128,7 @@ makeDoc pathToExamples pathToRipser = do
   K.logLE K.Info
     $  "Output (input as PC):\n"
     <> (T.pack $ L.intercalate "\n" $ fmap show annulusBarcodesPC)
-
+-}
   return ()
 
 plotXY :: Foldable f => T.Text -> (a -> (Double, Double)) -> f a -> GV.VegaLite

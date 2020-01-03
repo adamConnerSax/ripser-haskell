@@ -214,8 +214,8 @@ lowerDistanceMatrixFromFile fp = do
     Just r -> return $ ((r - 1) `div` 2) + 1 -- +1 here because we have only below diagonal
   putStrLn $ "lowerDistanceMatrixFromFile: LDM has " ++ show nCols ++ " columns"
   let indices = do
-        col <- [0 .. (nCols - 1)]
-        row <- [(col + 1) .. (nCols - 1)]
+        row <- [0 .. (nCols - 1)]
+        col <- [0 .. (row - 1)]
         return (row, col)
       mLD = LA.assoc (nCols, nCols) 0 $ zip indices nums
   return $ LowerDistance mLD
